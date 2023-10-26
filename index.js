@@ -1,4 +1,4 @@
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const express = require("express");
 const app = express()
 const cors = require("cors");
@@ -28,6 +28,44 @@ async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
+
+    // service collection
+    const servicesCollection = client.db("carDoctorDB").collection("services")
+    // order collection
+    const ordersCollection = client.db("carDoctorDB").collection("orders")
+
+    // get services endpoint
+    app.get("/services", async(req, res)=>{
+        const cursor = servicesCollection.find()
+        const result = await cursor.toArray()
+        res.send(result)
+    })
+    // get a single service
+    app.get("/services/:id", async(req, res)=>{
+        const id = req.params.id;
+        const query = {_id: new ObjectId(id)}
+        const result = await servicesCollection.findOne(query)
+        res.send(result)
+    })
+
+    // get endpoint of orders
+    app.get("/orders", async(req, res)=>{
+        let query = {};
+        if(req.query?.email){
+            query = {email: req.query.email}
+        }
+        const result = await ordersCollection.find(query).toArray()
+        res.send(result)
+    })
+
+    // post a order by user, POST endpoint
+    app.post("/orders", async(req, res)=>{
+        const order = req.body;
+        const result = await ordersCollection.insertOne(order)
+        res.send(result)
+    })
+
+
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
