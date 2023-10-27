@@ -1,9 +1,9 @@
-const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId, LEGAL_TCP_SOCKET_OPTIONS } = require("mongodb");
 const express = require("express");
 const app = express();
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
-const cookieParser = require('cookie-parser')
+const cookieParser = require("cookie-parser");
 const port = process.env.PORT || 5000;
 require("dotenv").config();
 
@@ -15,7 +15,7 @@ app.use(
   })
 );
 app.use(express.json());
-app.use(cookieParser())
+app.use(cookieParser());
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_KEY}@cluster0.hf0b3tt.mongodb.net/?retryWrites=true&w=majority`;
 
@@ -27,6 +27,26 @@ const client = new MongoClient(uri, {
     deprecationErrors: true,
   },
 });
+
+
+// middlewares
+const verifyToken = (req, res, next)=>{
+    const token = req.cookies?.token;
+    console.log("value of token in middleware", token)
+    if(!token){
+        return res.status(401).send({message: "unauthorized"})
+    }
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (error, decoded)=>{
+        //error
+        if(error){
+            return res.status(401),send({message: "unauthorized"})
+        }
+        // if token is valid then it would be decoded
+        req.user = decoded;
+        next()
+    })
+    
+}
 
 async function run() {
   try {
@@ -42,17 +62,15 @@ async function run() {
     app.post("/jwt", async (req, res) => {
       const user = req.body;
       const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
-        expiresIn: '1h',
+        expiresIn: "1h",
       });
 
       res
-      .cookie('token', token, {
-        httpOnly:true,
-        secure:false,
-    
-      })
-      .send({success:true})
-    
+        .cookie("token", token, {
+          httpOnly: true,
+          secure: false,
+        })
+        .send({ success: true });
     });
 
     // get services endpoint
@@ -70,7 +88,11 @@ async function run() {
     });
 
     // get endpoint of orders
-    app.get("/orders", async (req, res) => {
+    app.get("/orders", verifyToken,  async (req, res) => {
+        console.log("from valid token", req.user)
+        if(req?.query?.email !== req?.user?.email){
+            return res.status(403).send({message: "forbidden"})
+        }
       let query = {};
       if (req.query?.email) {
         query = { email: req.query.email };
