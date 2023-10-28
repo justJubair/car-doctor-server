@@ -1,4 +1,4 @@
-const { MongoClient, ServerApiVersion, ObjectId, LEGAL_TCP_SOCKET_OPTIONS } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const express = require("express");
 const app = express();
 const cors = require("cors");
@@ -39,7 +39,7 @@ const verifyToken = (req, res, next)=>{
     jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (error, decoded)=>{
         //error
         if(error){
-            return res.status(401),send({message: "unauthorized"})
+            return res.status(401).send({message: "unauthorized"})
         }
         // if token is valid then it would be decoded
         req.user = decoded;
