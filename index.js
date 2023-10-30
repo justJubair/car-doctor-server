@@ -29,24 +29,8 @@ const client = new MongoClient(uri, {
 });
 
 
-// middlewares
-const verifyToken = (req, res, next)=>{
-    const token = req.cookies?.token;
-    console.log("value of token in middleware", token)
-    if(!token){
-        return res.status(401).send({message: "unauthorized"})
-    }
-    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (error, decoded)=>{
-        //error
-        if(error){
-            return res.status(401).send({message: "unauthorized"})
-        }
-        // if token is valid then it would be decoded
-        req.user = decoded;
-        next()
-    })
-    
-}
+// middlewares related to JWT
+
 
 async function run() {
   try {
@@ -59,19 +43,7 @@ async function run() {
     const ordersCollection = client.db("carDoctorDB").collection("orders");
 
     // auth related api
-    app.post("/jwt", async (req, res) => {
-      const user = req.body;
-      const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
-        expiresIn: "1h",
-      });
-
-      res
-        .cookie("token", token, {
-          httpOnly: true,
-          secure: false,
-        })
-        .send({ success: true });
-    });
+   
 
     // get services endpoint
     app.get("/services", async (req, res) => {
@@ -88,11 +60,9 @@ async function run() {
     });
 
     // get endpoint of orders
-    app.get("/orders", verifyToken,  async (req, res) => {
-        console.log("from valid token", req.user)
-        if(req?.query?.email !== req?.user?.email){
-            return res.status(403).send({message: "forbidden"})
-        }
+    app.get("/orders",  async (req, res) => {
+     
+       
       let query = {};
       if (req.query?.email) {
         query = { email: req.query.email };
