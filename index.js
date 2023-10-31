@@ -30,7 +30,22 @@ const client = new MongoClient(uri, {
 
 
 // middlewares related to JWT
-
+const verifyToken = (req, res, next)=>{
+  const token = req.cookies?.token;
+  if(!token){
+    return res.status(401).send({message: "unauthorized"});
+  }
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (error, decoded)=>{
+    //error
+    if(error){
+      return res.status(401).send({message: "unauthorized"})
+    }
+    //if token is valid then only it would be decoded
+    req.user = decoded;
+   
+    next()
+  })
+}
 
 async function run() {
   try {
@@ -77,7 +92,10 @@ async function run() {
     });
 
     // get endpoint of orders
-    app.get("/orders",  async (req, res) => {
+    app.get("/orders", verifyToken, async (req, res) => {
+      if(req.query?.email !== req.user?.email){
+        return res.status(403).send({message: "forbidden"})
+      }
       let query = {};
       if (req.query?.email) {
         query = { email: req.query.email };
