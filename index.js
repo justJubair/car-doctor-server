@@ -43,7 +43,24 @@ async function run() {
     const ordersCollection = client.db("carDoctorDB").collection("orders");
 
     // auth related api
-   
+    app.post("/jwt", (req,res)=>{
+      const user = req.body
+      const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
+        expiresIn: "1h"
+      })
+       res
+        .cookie("token", token, {
+          httpOnly: true,
+          secure: true
+        })
+        .send({success:true})
+    })
+    // clear cookie api, JWT
+    app.post("/logout", (req,res)=>{
+      const user = req.body;
+      console.log(user)
+      res.clearCookie("token", {maxAge:0}).send({success:true})
+    })
 
     // get services endpoint
     app.get("/services", async (req, res) => {
@@ -61,8 +78,6 @@ async function run() {
 
     // get endpoint of orders
     app.get("/orders",  async (req, res) => {
-     
-       
       let query = {};
       if (req.query?.email) {
         query = { email: req.query.email };
