@@ -80,7 +80,10 @@ async function run() {
     // get services endpoint
     app.get("/services", async (req, res) => {
       const filter = req.query;
-      const query = {}
+      const query = {
+        // price: {$lt: 150}
+        title: {$regex: filter.search, $options: "i"}
+      }
       const options = {
         sort: {
           price: filter.sort === "asc" ? 1 : -1
